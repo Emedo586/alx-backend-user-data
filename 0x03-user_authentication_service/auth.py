@@ -3,8 +3,8 @@
 Auth module
 """
 from db import DB
-from uuid
-from bcrypt
+import uuid
+import bcrypt
 from user import User
 from typing import TypeVar
 from sqlalchemy.orm.exc import NoResultFound
@@ -52,12 +52,17 @@ class Auth:
         Raises:
             ValueError: If a user with the same email already exists
         """
-        if self._db.find_user_by(email=email):
-            raise ValueError(f"User {email} already exists")
+        #if self._db.find_user_by(email=email):
+            #raise ValueError(f"User {email} already exists")
 
-        hashed_password = _hash_password(password)
-        user = self._db.add_user(email, hashed_password)
-        return user
+        #hashed_password = _hash_password(password)
+        #user = self._db.add_user(email, hashed_password)
+        #return user
+        try:
+            self._db.find_user_by(email=email)
+            raise ValueError(f"User {email} already exists")
+        except NoResultFound:
+            return self._db.add_user(email, _hash_password(password))
 
     def valid_login(self, email: str, password: str) -> bool:
         """valid login of user
@@ -68,13 +73,17 @@ class Auth:
 
         Returns:
             bool: [description]
-        """    
-        #user = auth.User.query.filter_by(email=email).first()
-        user = self._db.find_user_by(email=email)
-        if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-            return True
-        else:
+        """
+        #user = self._db.find_user_by(email=email)
+        #if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            #return True
+        #else:
+            #return False
+        try:
+            user = self._db.find_user_by(email=email)
+        except NoResultFound:
             return False
+        return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
     
     def create_session(self, email: str) -> str:
         """create a new session for user
@@ -85,14 +94,13 @@ class Auth:
         Returns:
             str: string representation of session ID
         """
-        user = self._db.find_user_by(email=email)
-        if user:
+        try:
+            user = self._db.find_user_by(email=email)
             session_id = _generate_uuid()
-            self._db.update_user_session_id(user.id, session_id)
-            return session_id
-        else:
-            return None
-        
+            self._db.update_user(user.id, session_id=session_id)
+        except NoResultFound:
+            return
+
     def get_user_from_session_id(self, session_id: str) -> str:
         """get user from session id
 

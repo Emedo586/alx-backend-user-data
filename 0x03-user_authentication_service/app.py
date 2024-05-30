@@ -22,7 +22,7 @@ def home() -> str:
 
 
 @app.route('/users', methods=['POST'], strict_slashes=False)
-def register_user() -> str:
+def reg_user() -> str:
     """POST route for user register
 
     Returns:
