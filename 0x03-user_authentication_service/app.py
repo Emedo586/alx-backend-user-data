@@ -12,11 +12,9 @@ app = Flask(__name__)
 @app.route('/', methods=['GET'], strict_slashes=False)
 def home() -> str:
     """GET route index
-
     Returns:
         str: json {'message': 'Bienvenue'}
     """
-    
     response = jsonify({"message": "Bienvenue"})
     return response, 200
 
@@ -24,13 +22,12 @@ def home() -> str:
 @app.route('/users', methods=['POST'], strict_slashes=False)
 def reg_user() -> str:
     """POST route for user register
-
     Returns:
-        str: messege
+    str: messege
     """
     try:
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email')
+        password = request.form.get('password')
         user = AUTH.register_user(email, password)
         return jsonify({"email": user.email, "message": "user created"}), 201
     except Exception as e:
@@ -40,7 +37,6 @@ def reg_user() -> str:
 @app.route('/sessions', methods=['POST'], strict_slashes=False)
 def login() -> str:
     """login
-
     Returns:
         str: messege
     """
@@ -50,15 +46,14 @@ def login() -> str:
     if not valid_login:
         abort(401)
     session_id = AUTH.create_session(email)
-    resp = jsonify({"email": f"{email}", "message": "logged in"})
-    resp.set_cookie('session_id', session_id)
-    return resp
-    
+    response = jsonify({"email": email, "message": "logged in"})
+    response.set_cookie('session_id', session_id)
+    return response
+
 
 @app.route('/sessions', methods=['DELETE'], strict_slashes=False)
 def logout() -> str:
     """ logout
-
     Return:
        str: message
     """
@@ -74,22 +69,21 @@ def logout() -> str:
 @app.route('/profile', methods=['GET'], strict_slashes=False)
 def profile() -> str:
     """profile
-
     Return:
        str: message
     """
     session_id = request.cookies.get('session_id')
-    user = AUTH.get_user_from_session_id(session_id)
-    if user:
-        return jsonify({"email": user.email}), 200
-    else:
+    try:
+        user = AUTH.get_user_from_session_id(session_id)
+        if user:
+            return jsonify({"email": user.email}), 200
+    except ValueError:
         abort(403)
 
 
 @app.route('/reset_password', methods=['POST'], strict_slashes=False)
 def get_reset_password_token() -> str:
     """get_reset_password
-
     Return:
        str: message
     """
@@ -105,7 +99,6 @@ def get_reset_password_token() -> str:
 @app.route('/reset_password', methods=['PUT'], strict_slashes=False)
 def update_password() -> str:
     """update_password
-
     Return:
        str: message
     """

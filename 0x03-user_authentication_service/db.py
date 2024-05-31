@@ -3,13 +3,13 @@
 """
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
-from sqlalchemy.exc import NoResultFound, InvalidRequestError
-#from sqlalchemy.exc import InvalidRequestError
-#from sqlalchemy.orm.exc import NoResultFound as ORMNoResultFound
-from typing import TypeVar
+from sqlalchemy.orm.exc import NoResultFound
+
 from user import Base, User
+from typing import TypeVar
 
 
 class DB:
@@ -41,48 +41,36 @@ class DB:
             hashed_password (str): The hashed password of the user
 
         Returns:
-            User: The newly created User object
+            current_user: The newly created User object
         """
-        user = User(email=email, hashed_password=hashed_password)
-        self._session.add(user)
+        current_user = User(email=email, hashed_password=hashed_password)
+        self._session.add(current_user)
         self._session.commit()
-        return user
+        return current_user
 
     def find_user_by(self, **kwargs) -> User:
         """Find a user by the given keyword arguments
-
         Args:
             **kwargs: The keyword arguments to filter the users by
-
         Returns:
-            User: The first user found that matches the given keyword arguments
-
+            User: The first user found that matches the keyword arguments
         Raises:
-            NoResultFound: If no user is found that matches the given keyword arguments
+            NoResultFound: If no user is found matching the keyword arguments
             InvalidRequestError: If the keyword arguments are invalid
         """
-        #user = self._session.query(User).filter_by(**kwargs).first()
-        #if not user:
-            #raise NoResultFound
-        #return user
-        query = self._session.query(User)
-        for key, value in kwargs.items():
-            if hasattr(User, key):
-                query = query.filter(getattr(User, key) == value)
-            else:
-                raise InvalidRequestError(f"Invalid keyword argument '{key}'")
         try:
-            return query.one()
-        except:
-            raise NoResultFound(f"No user found with the given keyword arguments: {kwargs}")
+            find_user = self._session.query(User).filter_by(**kwargs).one()
+        except NoResultFound:
+            raise NoResultFound()
+        except InvalidRequestError:
+            raise InvalidRequestError()
+        return find_user
 
     def update_user(self, user_id: int, **kwargs) -> None:
         """Update a user's attributes
-
         Args: user_id (int): The ID of the user to update
               **kwargs: The keyword arguments to update the
               user's attributes with
-
         Raises:
             NoResultFound: If no user is found with the given user ID
             ValueError: If an invalid keyword argument is passed
